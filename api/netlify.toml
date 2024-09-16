@@ -1,2 +1,16 @@
 [build]
-  functions = "functions"
+  # Directory for your build output
+  publish = "public" # Adjust this if your static files are in a different folder
+  # Directory for your serverless functions
+  functions = "netlify/functions"
+
+[functions]
+  # Set Node.js version if required
+  node_bundler = "esbuild" # Use esbuild for smaller, faster functions
+
+[[redirects]]
+  # Redirect all routes to your serverless function (important for SPAs)
+  from = "/*"
+  to = "/.netlify/functions/server"
+  status = 200
+
