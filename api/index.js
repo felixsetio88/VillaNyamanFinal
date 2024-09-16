@@ -11,10 +11,13 @@ import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import cors from "cors";
 import path from "path";
+import serverless from "serverless-http"; // Import serverless-http
 
 const app = express();
+
 dotenv.config();
 mongoose.set("strictQuery", false);
+
 // Database connection
 const connect = async () => {
   try {
@@ -30,21 +33,23 @@ mongoose.connection.on("disconnected", () => {
 });
 
 // Middlewares
-app.use(cors({
-  origin: process.env.FRONT_END_URL || "http://localhost:3000",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.FRONT_END_URL || "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(bodyParser.json());
 
 // Nodemailer configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER, // Using environment variable for email
     pass: process.env.EMAIL_PASS, // Using environment variable for password
-  }
+  },
 });
 
 // Routes
@@ -56,29 +61,29 @@ app.use("/api/order", orderRoute);
 
 // Route for serving static files
 const __dirname = path.resolve();
-app.use("/uploads", express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Email sending route
-app.post('/api/send-email', (req, res) => {
+app.post("/api/send-email", (req, res) => {
   const { fullName, email, message } = req.body;
 
   if (!fullName || !email || !message) {
-    return res.status(400).send('All fields are required.');
+    return res.status(400).send("All fields are required.");
   }
 
   const mailOptions = {
     from: process.env.EMAIL_USER, // Sender email
-    to: process.env.EMAIL_USER,   // Receiver email (same email for simplicity)
+    to: process.env.EMAIL_USER, // Receiver email (same email for simplicity)
     subject: `Message from ${fullName}`,
     text: `Message from ${fullName} (${email}): \n\n${message}`,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.error('Error while sending email:', error);
-      return res.status(500).send('Failed to send email.');
+      console.error("Error while sending email:", error);
+      return res.status(500).send("Failed to send email.");
     }
-    res.status(200).send('Email sent successfully: ' + info.response);
+    res.status(200).send("Email sent successfully: " + info.response);
   });
 });
 
@@ -94,8 +99,5 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(8800, () => {
-  connect();
-  console.log("Connected to backend.");
-});
+// Export the app for serverless deployment
+export const handler = serverless(app); // Export the serverless function handler
